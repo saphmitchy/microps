@@ -80,7 +80,7 @@ net_device_output(struct net_device *dev, uint16_t type, const uint8_t *data, si
         errorf("not opened, dev=%s", dev->name);
         return -1;
     }
-    debugf("dev=%s, type=%s, mtu=%u, len=%zu", dev->name, dev->type, dev->mtu, len);
+    debugf("dev=%s, type=0x%04x, mtu=%u, len=%zu", dev->name, dev->type, dev->mtu, len);
     debugdump(data, len);
     if (dev->ops->transmit(dev, type, data, len, dst) == -1) {
         errorf("device transmit failure, dev=%s, len=%zu", dev->name, len);
@@ -92,7 +92,7 @@ net_device_output(struct net_device *dev, uint16_t type, const uint8_t *data, si
 int
 net_input_handler(uint16_t type, const uint8_t *data, size_t len, struct net_device *dev)
 {
-    debugf("dev=5s, type=0x%04x, len=%zu", dev->name, type, len);
+    debugf("dev=%s, type=0x%04x, len=%zu", dev->name, type, len);
     debugdump(data, len);
     return 0;
 }
