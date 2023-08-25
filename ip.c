@@ -27,7 +27,14 @@ struct ip_hdr{
 const ip_addr_t IP_ADDR_ANY = 0x00000000; /* 0.0.0.0 */
 const ip_addr_t IP_ADDR_BROADCAST = 0xffffffff; /* 255.255.255.255 */
 
+struct ip_protocol {
+    struct ip_protocol *next;
+    uint8_t type;
+    void (*handler)(const uint8_t *data, size_t len, ip_addr_t src, ip_addr_t dst, struct ip_iface *iface);
+};
+
 static struct ip_iface *ifaces;
+static struct ip_protocol *protocols;
 
 int
 ip_addr_pton(const char *p, ip_addr_t *n)
@@ -146,13 +153,39 @@ ip_iface_select(ip_addr_t addr) {
     return NULL;
 }
 
+int
+ip_protocol_register(uint8_t type, void (*handler)(const uint8_t *data, size_t len, ip_addr_t src, ip_addr_t dst, struct ip_iface *iface))
+{
+    struct ip_protocol *entry;
+
+    for(entry = protocols; entry; entry = entry->next) {
+        if(type == entry->type) {
+            errorf("protocol type(=%u) is already registered", type);
+            return -1;
+        }
+    }
+
+    struct ip_protocol *protocol = memory_alloc(sizeof(*protocol));
+    if(!protocol) {
+        errorf("memory_alloc() failure");
+        return -1;
+    }
+    protocol->type = type;
+    protocol->handler = handler;
+    protocol->next = protocols;
+    protocols = protocol;
+    infof("registered, type=%u", protocol->type);
+    return 0;
+}
+
 static void
 ip_input(const uint8_t *data, size_t len, struct net_device *dev)
 {
     struct ip_hdr *hdr;
-    uint8_t v;
+    uint8_t v, protocol;
     uint16_t hlen, total, offset;
     struct ip_iface *iface;
+    struct ip_protocol *entry;
     ip_addr_t dst;
     char addr1[IP_ADDR_STR_LEN];
     char addr2[IP_ADDR_STR_LEN];
@@ -198,6 +231,15 @@ ip_input(const uint8_t *data, size_t len, struct net_device *dev)
     debugf("dev=%s, iface=%s, protocol=%u, total=%u",
         dev->name, ip_addr_ntop(iface->unicast, addr2, sizeof(addr2)),hdr->protocol, total);
     ip_dump(data, total);
+
+    protocol = hdr->protocol;
+    for(entry = protocols; entry; entry = entry->next) {
+        if(entry->type == protocol) {
+            entry->handler(data + hlen, total - hlen, hdr->src, hdr->dst, iface);
+            return;
+        }
+    }
+    /* unsupported protocol */
 }
 
 int
