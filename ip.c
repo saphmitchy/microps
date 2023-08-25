@@ -121,9 +121,9 @@ ip_iface_alloc(const char *unicast, const char *netmask) {
 /* NOTE: must not be call after net_run() */
 int
 ip_iface_register(struct net_device *dev, struct ip_iface *iface) {
-    char addr1[IP_ADDR_LEN];
-    char addr2[IP_ADDR_LEN];
-    char addr3[IP_ADDR_LEN];
+    char addr1[IP_ADDR_STR_LEN];
+    char addr2[IP_ADDR_STR_LEN];
+    char addr3[IP_ADDR_STR_LEN];
     net_device_add_iface(dev, NET_IFACE(iface));
     iface->next = ifaces;
     ifaces = iface;
