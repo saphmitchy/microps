@@ -2,6 +2,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
+#include <sys/time.h>
 
 #include "platform.h"
 
@@ -24,9 +25,17 @@ struct net_protocol_queue_entry {
     uint8_t data[];
 };
 
+struct net_timer {
+    struct net_timer *next;
+    struct timeval interval;
+    struct timeval last;
+    void (*handler)(void);
+};
+
 /* NOTE: if you want to add/delete the entries after net_run(), you need to protect these lists with a mutex. */
 static struct net_device *devices;
 static struct net_protocol *protocols;
+static struct net_timer *timers;
 
 struct net_device *
 net_device_alloc(void)
@@ -163,6 +172,42 @@ net_input_handler(uint16_t type, const uint8_t *data, size_t len, struct net_dev
         }
     }
     /* unsupported protocol */
+    return 0;
+}
+
+/* NOTE: must not be call after net_run() */
+int
+net_timer_register(struct timeval interval, void (*handler)(void))
+{
+    struct net_timer *timer;
+    timer = memory_alloc(sizeof(*timer));
+    if(!timer) {
+        errorf("memory_alloc() filure");
+        return -1;
+    }
+    timer->interval = interval;
+    gettimeofday(&timer->last, NULL);
+    timer->handler = handler;
+    timer->next = timers;
+    timers = timer;
+    infof("registered: interval{%d %d}", interval.tv_sec, interval.tv_usec);
+    return 0;
+}
+
+int
+net_timer_handler(void)
+{
+    struct net_timer *timer;
+    struct timeval now, diff;
+    
+    for(timer = timers; timer; timer = timer->next) {
+        gettimeofday(&now, NULL);
+        timersub(&now, &timer->last, &diff);
+        if(timercmp(&timer->interval, &diff, <) != 0) {
+            timer->handler();
+            gettimeofday(&timer->last, NULL);
+        }
+    }
     return 0;
 }
 
