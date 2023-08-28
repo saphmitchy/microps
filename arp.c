@@ -189,7 +189,7 @@ arp_request(struct net_iface *iface, ip_addr_t tpa)
     memcpy(request.sha, iface->dev->addr, ETHER_ADDR_LEN);
     memcpy(request.spa, &((struct ip_iface*)iface)->unicast, IP_ADDR_LEN);
     memcpy(request.tha, ETHER_ADDR_ANY, ETHER_ADDR_LEN);
-    memcpy(request.tpa, &IP_ADDR_ANY, IP_ADDR_LEN);
+    memcpy(request.tpa, (uint8_t *)&tpa, IP_ADDR_LEN);
     
     debugf("dev=%s, len=%zu", iface->dev->name, sizeof(request));
     arp_dump((uint8_t *)&request, sizeof(request));
@@ -277,7 +277,7 @@ arp_resolve(struct net_iface *iface, ip_addr_t pa, uint8_t *ha)
 
     mutex_lock(&mutex);
     cache = arp_cache_select(pa);
-    debugf("search() failured");
+    debugf("search() failured, %x", cache);
 
     if(!cache) {
 

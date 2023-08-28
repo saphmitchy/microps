@@ -88,7 +88,7 @@ main(int argc, char *argv[])
     }
     ip_addr_pton("192.0.2.2", &src);
     ip_addr_pton("192.0.2.1", &dst);
-    id = 39849 % UINT16_MAX;
+    id = getpid() % UINT16_MAX;
     while (!terminate) {
         if (icmp_output(ICMP_TYPE_ECHO, 0, hton32(id << 16 | ++seq), test_data + offset, sizeof(test_data) - offset, src, dst) == -1) {
             errorf("icmp_output(() failure");

@@ -346,7 +346,6 @@ ip_output(uint8_t protocol, const uint8_t *data, size_t len, ip_addr_t src, ip_a
             return -1;
     }
     id = ip_generate_id();
-    // if(ip_output_core(iface, protocol, data, len, iface->unicast, dst, id, NET_IFACE(iface)->dev->flags) == -1) {
     if(ip_output_core(iface, protocol, data, len, iface->unicast, dst, id, 0) == -1) {
         errorf("ip_output_core() failure");
         return -1;
