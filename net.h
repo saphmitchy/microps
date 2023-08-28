@@ -43,6 +43,7 @@ struct net_device {
     uint16_t flags;
     uint16_t hlen; /* header length */
     uint16_t alen; /* address length */
+    uint8_t addr[NET_DEVICE_ADDR_LEN];
     union {
         uint8_t peer[NET_DEVICE_ADDR_LEN];
         uint8_t broadcast[NET_DEVICE_ADDR_LEN];
