@@ -72,7 +72,7 @@ ether_dump(const uint8_t *frame, size_t flen)
 int
 ether_transmit_helper(struct net_device *dev, uint16_t type, const uint8_t *data, size_t len, const void *dst, ether_transmit_func_t callback)
 {
-    uint8_t frame[ETHER_FRAME_SIZE_MIN] = {};
+    uint8_t frame[ETHER_FRAME_SIZE_MAX] = {};
     struct ether_hdr *hdr;
     size_t flen, pad = 0;
 
@@ -86,8 +86,8 @@ ether_transmit_helper(struct net_device *dev, uint16_t type, const uint8_t *data
     }
     flen = sizeof(*hdr) + len + pad;
     debugf("dev=%s, tpye=0x%04x, len=%zu", dev->name, type, flen);
-    ether_dump(frame, flen);
-    return callback(dev, frame, len) == (ssize_t)flen ? 0 : -1;
+    ssize_t cb = callback(dev, frame, flen);
+    return cb == (ssize_t)flen ? 0 : -1;
 }
 
 int
