@@ -9,6 +9,7 @@
 #include "util.h"
 #include "net.h"
 #include "ip.h"
+#include "arp.h"
 
 struct ip_hdr{
     uint8_t vhl;
@@ -255,17 +256,20 @@ static int
 ip_output_device(struct ip_iface *iface, const uint8_t *data, size_t len, ip_addr_t dst)
 {
     uint8_t hwaddr[NET_DEVICE_ADDR_LEN] = {};
+    int ret;
 
     if(NET_IFACE(iface)->dev->flags & NET_DEVICE_FLAG_NEED_ARP) {
         if(dst == iface->broadcast || dst == IP_ADDR_BROADCAST) {
             memcpy(hwaddr, NET_IFACE(iface)->dev->broadcast, NET_IFACE(iface)->dev->alen);
         } else {
-            errorf("arp does not implement");
-            return -1;
+            ret = arp_resolve(NET_IFACE(iface), dst, hwaddr);
+            if(ret != ARP_RESOLVE_FOUND) {
+                return ret;
+            }
         }
     }
 
-    return net_device_output(iface->iface.dev, NET_PROTOCOL_TYPE_IP, data, len, NULL);
+    return net_device_output(iface->iface.dev, NET_PROTOCOL_TYPE_IP, data, len, hwaddr);
 }
 
 static ssize_t
@@ -293,7 +297,7 @@ ip_output_core(struct ip_iface *iface, uint8_t protocol, const uint8_t *data, si
     memcpy(buf + hlen, data, len);
 
     debugf("dev=%s, dest=%s, protocol=%u, len=%u",
-        NET_IFACE(iface)->dev->name, ip_addr_ntop(dst, addr, sizeof(data)), protocol, total);
+        NET_IFACE(iface)->dev->name, ip_addr_ntop(dst, addr, sizeof(addr)), protocol, total);
     ip_dump(buf, total);
     return ip_output_device(iface, buf, total, dst);
 }
@@ -342,6 +346,7 @@ ip_output(uint8_t protocol, const uint8_t *data, size_t len, ip_addr_t src, ip_a
             return -1;
     }
     id = ip_generate_id();
+    // if(ip_output_core(iface, protocol, data, len, iface->unicast, dst, id, NET_IFACE(iface)->dev->flags) == -1) {
     if(ip_output_core(iface, protocol, data, len, iface->unicast, dst, id, 0) == -1) {
         errorf("ip_output_core() failure");
         return -1;
