@@ -23,7 +23,7 @@
 
 #define IP_PROTOCOL_ICMP 1
 #define IP_PROTOCOL_TCP  6
-#define IP_PROTOCOL_UDP  7
+#define IP_PROTOCOL_UDP  17
 
 typedef uint32_t ip_addr_t;
 
