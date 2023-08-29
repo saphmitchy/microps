@@ -80,6 +80,10 @@ extern int net_softirq_handler(void);
 extern int net_device_add_iface(struct net_device *dev, struct net_iface *iface);
 extern  struct net_iface *net_device_get_iface(struct net_device *dev, int family);
 
+extern int net_event_subscribe(void (*handler)(void *arg), void *arg);
+extern int net_event_handler(void);
+extern void net_raise_event(void);
+
 extern int net_run(void);
 extern void net_shutdown(void);
 extern int net_init(void);
